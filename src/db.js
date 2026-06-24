@@ -1,5 +1,5 @@
 const DB_NAME = 'time-tracker-db';
-const DB_VER  = 2;
+const DB_VER  = 3;
 let db = null;
 
 export function openDB() {
@@ -19,6 +19,7 @@ export function openDB() {
       if (!d.objectStoreNames.contains('state')) {
         d.createObjectStore('state', { keyPath: 'key' });
       }
+      // v2→v3: no schema changes; old 'note' field is handled in UI layer
     };
     req.onsuccess = e => { db = e.target.result; res(db); };
     req.onerror   = () => rej(req.error);
@@ -26,7 +27,7 @@ export function openDB() {
 }
 
 async function tx(stores, mode, fn) {
-  const d  = await openDB();
+  const d = await openDB();
   return new Promise((res, rej) => {
     const t = d.transaction(stores, mode);
     t.onerror = () => rej(t.error);
@@ -59,7 +60,7 @@ export const getAllSessions = () => tx(['sessions'], 'readonly', (t, res) => {
   r.onsuccess = () => res([...r.result].reverse());
 });
 
-export const clearAllSessions = () => tx(['sessions','screenshots'], 'readwrite', (t, res) => {
+export const clearAllSessions = () => tx(['sessions', 'screenshots'], 'readwrite', (t, res) => {
   t.objectStore('sessions').clear();
   t.objectStore('screenshots').clear();
   t.oncomplete = () => res();
@@ -68,6 +69,16 @@ export const clearAllSessions = () => tx(['sessions','screenshots'], 'readwrite'
 export const saveScreenshot = (s) => tx(['screenshots'], 'readwrite', (t, res) => {
   const r = t.objectStore('screenshots').add(s);
   r.onsuccess = () => res(r.result);
+});
+
+export const updateScreenshot = (sc) => tx(['screenshots'], 'readwrite', (t, res) => {
+  const r = t.objectStore('screenshots').put(sc);
+  r.onsuccess = () => res(r.result);
+});
+
+export const deleteScreenshot = (id) => tx(['screenshots'], 'readwrite', (t, res) => {
+  const r = t.objectStore('screenshots').delete(id);
+  r.onsuccess = () => res();
 });
 
 export const getScreenshotsBySession = (sid) => tx(['screenshots'], 'readonly', (t, res) => {
@@ -85,7 +96,6 @@ export const setState = (key, value) => tx(['state'], 'readwrite', (t, res) => {
   r.onsuccess = () => res();
 });
 
-// Bulk import for migration
 export const importSessions = (sessions) => tx(['sessions'], 'readwrite', (t, res) => {
   const store = t.objectStore('sessions');
   sessions.forEach(s => store.put(s));

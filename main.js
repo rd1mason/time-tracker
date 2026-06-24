@@ -1,12 +1,13 @@
-const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog, globalShortcut } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 
 let win = null;
 
 const SIZES = {
-  compact:     { w: 380,  h: 88  },
-  session_end: { w: 440,  h: 540 },
+  compact:     { w: 380,  h: 108 },
+  pre_start:   { w: 440,  h: 258 },
+  session_end: { w: 440,  h: 590 },
   full:        { w: 1120, h: 780 },
 };
 
@@ -16,7 +17,6 @@ let compactPos  = null;
 function createWindow() {
   const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
   const { w, h } = SIZES.compact;
-
   win = new BrowserWindow({
     width: w, height: h,
     x: sw - w - 24,
@@ -34,7 +34,6 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
-
   win.loadFile('src/index.html');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setAlwaysOnTop(true, 'screen-saver');
@@ -43,12 +42,11 @@ function createWindow() {
 function setMode(mode) {
   if (!win) return;
   const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
-  const { w, h } = SIZES[mode];
+  const sz = SIZES[mode];
+  if (!sz) return;
+  const { w, h } = sz;
 
-  if (currentMode === 'compact') {
-    compactPos = win.getPosition();
-  }
-
+  if (currentMode === 'compact') compactPos = win.getPosition();
   currentMode = mode;
 
   if (mode === 'compact') {
@@ -56,6 +54,13 @@ function setMode(mode) {
     win.setAlwaysOnTop(true, 'screen-saver');
     win.setResizable(false);
     win.setBounds({ x: cx, y: Math.min(cy, sh - h - 8), width: w, height: h }, true);
+  } else if (mode === 'pre_start') {
+    const [cx, cy] = compactPos || [sw - SIZES.compact.w - 24, sh - SIZES.compact.h - 24];
+    const x = Math.max(8, Math.min(cx + SIZES.compact.w - w, sw - w - 8));
+    const y = Math.max(8, Math.min(cy - h + SIZES.compact.h, sh - h - 8));
+    win.setAlwaysOnTop(true, 'floating');
+    win.setResizable(false);
+    win.setBounds({ x, y, width: w, height: h }, true);
   } else if (mode === 'session_end') {
     const x = sw - w - 24;
     const y = sh - h - 24;
@@ -81,25 +86,34 @@ ipcMain.on('move-widget', (_, { dx, dy }) => {
   win.setPosition(x + dx, y + dy);
 });
 
-ipcMain.on('save-file', (_, { name, buffer }) => {
-  dialog.showSaveDialog(win, {
-    defaultPath: name,
-    filters: [{ name: 'Images', extensions: ['png','jpg','jpeg','gif','webp'] }],
-  }).then(r => {
-    if (!r.canceled && r.filePath) fs.writeFileSync(r.filePath, Buffer.from(buffer));
-  });
+// Stable screenshot save: convert dataUrl to Buffer on main side, show native dialog
+ipcMain.handle('save-screenshot', async (_, { dataUrl, name }) => {
+  try {
+    const result = await dialog.showSaveDialog(win, {
+      defaultPath: name || 'screenshot.png',
+      filters: [
+        { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+    if (result.canceled || !result.filePath) return { success: false, canceled: true };
+    const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+    const buf = Buffer.from(base64, 'base64');
+    fs.writeFileSync(result.filePath, buf);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.on('quit-app', () => app.quit());
 
-// Cmd+Option+I opens DevTools for debugging
-const { globalShortcut } = require('electron');
 app.whenReady().then(() => {
+  createWindow();
   globalShortcut.register('CommandOrControl+Alt+I', () => {
     if (win) win.webContents.openDevTools({ mode: 'detach' });
   });
 });
 
-app.whenReady().then(createWindow);
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

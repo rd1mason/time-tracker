@@ -12,7 +12,6 @@
 ══════════════════════════════════════ -->
 <div id="modeCompact" class="mode active">
   <div class="cw" id="dragHandle">
-    <!-- macOS-style traffic lights top-left -->
     <div class="cw-lights">
       <button class="win-btn win-btn-close" id="cwQuit" title="Закрити">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">
@@ -38,23 +37,64 @@
         <span class="cw-today-val" id="cwToday">0h 0m</span>
       </div>
       <div class="cw-actions">
-        <!-- idle: play -->
         <button class="cw-btn cw-play" id="cwPlay" title="Старт">
           <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
         </button>
-        <!-- running: pause -->
         <button class="cw-btn cw-pause" id="cwPause" title="Пауза" style="display:none">
           <svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>
         </button>
-        <!-- paused: resume (same play icon, different label) -->
         <button class="cw-btn cw-resume" id="cwResume" title="Продовжити" style="display:none">
           <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
         </button>
-        <!-- running or paused: stop -->
         <button class="cw-btn cw-stop" id="cwStop" title="Завершити" style="display:none">
           <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
         </button>
       </div>
+    </div>
+    <!-- Task bar: current task or idle hint -->
+    <div class="cw-taskbar">
+      <span class="cw-task-dot" id="cwTaskDot"></span>
+      <span class="cw-task-text" id="cwTaskText">Натисни ▶ щоб почати</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PRE-START FORM
+══════════════════════════════════════ -->
+<div id="modePreStart" class="mode">
+  <div class="ps-wrap">
+    <div class="ps-header">
+      <div class="ps-title-block">
+        <span class="ps-icon">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+            <circle cx="10" cy="10" r="8" stroke="#2483FF" stroke-width="1.5"/>
+            <path d="M10 6v4l3 2" stroke="#2483FF" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="ps-title">Що будеш робити?</span>
+      </div>
+      <button class="win-btn win-btn-close" id="psClose" title="Скасувати">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="ps-body">
+      <div class="ps-field">
+        <textarea id="psTask" class="ps-textarea" placeholder="Опиши задачу…" rows="3"></textarea>
+      </div>
+      <div class="ps-field">
+        <input id="psCategory" class="ps-input" type="text" placeholder="Категорія / Проєкт…" list="psCatList"/>
+        <datalist id="psCatList"></datalist>
+      </div>
+    </div>
+    <div class="ps-footer">
+      <button class="ps-btn-cancel" id="psCancel">Скасувати</button>
+      <button class="ps-btn-start" id="psStart">
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg>
+        Почати
+      </button>
     </div>
   </div>
 </div>
@@ -69,7 +109,7 @@
         <span class="se-icon">✓</span>
         <div>
           <div class="se-title">Сесію завершено</div>
-          <div class="se-subtitle">Зафіксуй що було зроблено</div>
+          <div class="se-subtitle">Що вдалось зробити?</div>
         </div>
       </div>
       <div class="se-dur-block">
@@ -78,14 +118,20 @@
       </div>
     </div>
 
+    <!-- Planned task (shown when set before start) -->
+    <div class="se-planned" id="sePlanned" style="display:none">
+      <span class="se-planned-lbl">Планувалось</span>
+      <span class="se-planned-text" id="sePlannedText"></span>
+    </div>
+
     <div class="se-body">
       <div class="se-field">
-        <label class="se-label">Що зроблено?</label>
-        <textarea id="seNote" class="se-textarea" placeholder="Опиши виконану роботу..." rows="4"></textarea>
+        <label class="se-label">Підсумок роботи</label>
+        <textarea id="seNote" class="se-textarea" placeholder="Що зроблено, результат…" rows="4"></textarea>
       </div>
       <div class="se-field">
         <label class="se-label">Категорія / Проєкт</label>
-        <input id="seCategory" class="se-input" type="text" placeholder="CRM, Арбітраж, Особисте..." list="seCatList"/>
+        <input id="seCategory" class="se-input" type="text" placeholder="CRM, Арбітраж, Особисте…" list="seCatList"/>
         <datalist id="seCatList"></datalist>
       </div>
       <div class="se-field">
@@ -100,8 +146,9 @@
     </div>
 
     <div class="se-footer">
-      <button class="se-btn-skip" id="seSkip">Скасувати</button>
-      <button class="se-btn-save" id="seSave">Зберегти сесію →</button>
+      <button class="se-btn-discard" id="seDiscard">Не зберігати</button>
+      <button class="se-btn-skip" id="seSkip">Без опису</button>
+      <button class="se-btn-save" id="seSave">Зберегти →</button>
     </div>
   </div>
 </div>
@@ -145,15 +192,21 @@
       <div class="fv-topbar-right">
         <div class="fv-timer-compact">
           <span class="fv-dot" id="fvDot"></span>
-          <span class="fv-time-sm" id="fvTimeSm">00:00:00</span>
+          <div class="fv-timer-info">
+            <span class="fv-time-sm" id="fvTimeSm">00:00:00</span>
+            <span class="fv-task-sm" id="fvTaskSm"></span>
+          </div>
           <button class="fv-play-sm" id="fvPlay" title="Старт">
-            <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><polygon points="6,3 20,12 6,21"/></svg>
           </button>
           <button class="fv-play-sm fv-pause-sm" id="fvPause" title="Пауза" style="display:none">
-            <svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>
+          </button>
+          <button class="fv-play-sm fv-resume-sm" id="fvResume" title="Продовжити" style="display:none">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><polygon points="6,3 20,12 6,21"/></svg>
           </button>
           <button class="fv-play-sm fv-stop-sm" id="fvStop" title="Завершити" style="display:none">
-            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
           </button>
         </div>
         <button class="win-btn win-btn-expand" id="fvCollapse" title="Згорнути">
@@ -162,13 +215,13 @@
             <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
           </svg>
         </button>
-        <button class="win-btn win-btn-close" id="fvQuit" title="Закрити програму">
+        <button class="win-btn win-btn-close" id="fvQuit" title="Закрити">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
-        <button class="fv-import-btn" id="fvImport" title="Імпортувати з CRM">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <button class="fv-import-btn" id="fvImport">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           Імпорт
         </button>
         <input id="importFileInput" type="file" accept=".json" style="display:none"/>
@@ -177,16 +230,24 @@
 
     <!-- Main content -->
     <div class="fv-main">
-      <!-- History timeline -->
       <div class="fv-timeline" id="fvTimeline"></div>
-
-      <!-- Session drawer -->
       <div class="fv-drawer" id="fvDrawer">
         <div class="drawer-header">
           <button class="drawer-close" id="drawerClose">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <span class="drawer-title">Деталі сесії</span>
+          <span class="drawer-title" id="drawerTitle">Деталі сесії</span>
+          <div class="drawer-hdr-btns">
+            <button class="dr-hdr-btn" id="drawerEditBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Ред.
+            </button>
+            <button class="dr-hdr-btn dr-save-btn" id="drawerSaveBtn" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20,6 9,17 4,12"/></svg>
+              Зберегти
+            </button>
+            <button class="dr-hdr-btn" id="drawerCancelBtn" style="display:none">Скасувати</button>
+          </div>
         </div>
         <div class="drawer-body" id="drawerBody"></div>
       </div>
@@ -201,7 +262,9 @@
   </div>
 </div>
 
-<!-- Lightbox gallery -->
+<!-- ══════════════════════════════════════
+     LIGHTBOX GALLERY
+══════════════════════════════════════ -->
 <div id="lightbox" class="lightbox" style="display:none">
   <button class="lb-close" id="lbClose">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
