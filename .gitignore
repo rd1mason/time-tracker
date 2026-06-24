@@ -1,0 +1,9 @@
+node_modules/
+dist/
+out/
+*.log
+.DS_Store
+Thumbs.db
+/Time Tracker.app
+src/assets/*.icns
+nohup.out

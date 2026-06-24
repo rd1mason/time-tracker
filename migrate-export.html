@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Експорт даних таймера</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #0B0F17; color: #F2F5FA; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; padding: 40px; }
+  h1 { font-size: 22px; font-weight: 700; }
+  p { color: #94A3B8; font-size: 14px; text-align: center; max-width: 480px; line-height: 1.6; }
+  .card { background: #121826; border: 1px solid #232E45; border-radius: 14px; padding: 28px 32px; max-width: 520px; width: 100%; }
+  .stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1a2235; font-size: 14px; }
+  .stat:last-child { border-bottom: none; }
+  .val { color: #2483FF; font-weight: 700; }
+  button { background: #2483FF; color: #fff; border: none; border-radius: 10px; padding: 13px 32px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; width: 100%; }
+  button:hover { background: #1a6fe8; }
+  .warn { color: #EF4444; font-size: 13px; }
+  pre { background: #121826; border: 1px solid #232E45; border-radius: 8px; padding: 12px; font-size: 11px; color: #94A3B8; max-height: 120px; overflow: auto; width: 100%; text-align: left; }
+</style>
+</head>
+<body>
+<h1>📤 Експорт даних з CRM-таймера</h1>
+<p>Відкрий цю сторінку в тому самому браузері де працює твоя CRM (щоб мати доступ до localStorage). Потім натисни кнопку нижче.</p>
+
+<div class="card" id="card">
+  <div id="status">Перевіряю дані...</div>
+</div>
+
+<script>
+const KEY = 'radarFocusSessions';
+
+function fmtDur(s) {
+  if (!s) return '0m';
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+const raw = localStorage.getItem(KEY);
+const card = document.getElementById('card');
+
+if (!raw) {
+  card.innerHTML = `
+    <p class="warn">⚠️ Дані не знайдені. Переконайся що ця сторінка відкрита в тому ж браузері що і CRM.</p>
+    <p style="font-size:12px;color:#64748b">Ключ: <code>${KEY}</code></p>`;
+} else {
+  const sessions = JSON.parse(raw);
+  const total = sessions.reduce((a,s) => a + (s.duration||0), 0);
+  const today = new Date().toISOString().slice(0,10);
+  const todayS = sessions.filter(s => (s.date||'').startsWith(today)).reduce((a,s) => a + (s.duration||0), 0);
+  const months = [...new Set(sessions.map(s => (s.date||'').slice(0,7)))];
+
+  // Convert to new format
+  const converted = sessions.map((s, i) => ({
+    id: i + 1,
+    date: s.date || new Date().toISOString(),
+    startTs: s.startTs || (new Date(s.date).getTime()),
+    duration: s.duration || 0,
+    note: s.note || '',
+    category: s.category || '',
+  }));
+
+  const json = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), sessions: converted }, null, 2);
+
+  card.innerHTML = `
+    <div class="stat"><span>Всього сесій</span><span class="val">${sessions.length}</span></div>
+    <div class="stat"><span>Загальний час</span><span class="val">${fmtDur(total)}</span></div>
+    <div class="stat"><span>Сьогодні</span><span class="val">${fmtDur(todayS)}</span></div>
+    <div class="stat"><span>Місяці</span><span class="val">${months.join(', ')}</span></div>
+    <pre>${json.slice(0, 300)}...</pre>
+    <button onclick="download()">⬇️ Скачати backup.json</button>
+  `;
+
+  window._json = json;
+}
+
+function download() {
+  const a = document.createElement('a');
+  a.href = 'data:application/json,' + encodeURIComponent(window._json);
+  a.download = 'timetracker-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+</script>
+</body>
+</html>

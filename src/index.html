@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Time Tracker</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     COMPACT WIDGET
+══════════════════════════════════════ -->
+<div id="modeCompact" class="mode active">
+  <div class="cw" id="dragHandle">
+    <!-- macOS-style traffic lights top-left -->
+    <div class="cw-lights">
+      <button class="win-btn win-btn-close" id="cwQuit" title="Закрити">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <button class="win-btn win-btn-expand" id="cwExpand" title="Розгорнути">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+          <polyline points="15,3 21,3 21,9"/><polyline points="9,21 3,21 3,15"/>
+          <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+      </button>
+    </div>
+    <div class="cw-body">
+      <div class="cw-left">
+        <span class="cw-dot" id="cwDot"></span>
+        <span class="cw-status" id="cwStatus">Готовий</span>
+      </div>
+      <span class="cw-time" id="cwTime">00:00:00</span>
+      <div class="cw-divider"></div>
+      <div class="cw-today">
+        <span class="cw-today-lbl">сьогодні</span>
+        <span class="cw-today-val" id="cwToday">0h 0m</span>
+      </div>
+      <div class="cw-actions">
+        <!-- idle: play -->
+        <button class="cw-btn cw-play" id="cwPlay" title="Старт">
+          <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+        </button>
+        <!-- running: pause -->
+        <button class="cw-btn cw-pause" id="cwPause" title="Пауза" style="display:none">
+          <svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>
+        </button>
+        <!-- paused: resume (same play icon, different label) -->
+        <button class="cw-btn cw-resume" id="cwResume" title="Продовжити" style="display:none">
+          <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+        </button>
+        <!-- running or paused: stop -->
+        <button class="cw-btn cw-stop" id="cwStop" title="Завершити" style="display:none">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SESSION END FORM
+══════════════════════════════════════ -->
+<div id="modeSessionEnd" class="mode">
+  <div class="se-wrap">
+    <div class="se-header">
+      <div class="se-title-block">
+        <span class="se-icon">✓</span>
+        <div>
+          <div class="se-title">Сесію завершено</div>
+          <div class="se-subtitle">Зафіксуй що було зроблено</div>
+        </div>
+      </div>
+      <div class="se-dur-block">
+        <span class="se-dur" id="seDur">0m</span>
+        <span class="se-dur-lbl">тривалість</span>
+      </div>
+    </div>
+
+    <div class="se-body">
+      <div class="se-field">
+        <label class="se-label">Що зроблено?</label>
+        <textarea id="seNote" class="se-textarea" placeholder="Опиши виконану роботу..." rows="4"></textarea>
+      </div>
+      <div class="se-field">
+        <label class="se-label">Категорія / Проєкт</label>
+        <input id="seCategory" class="se-input" type="text" placeholder="CRM, Арбітраж, Особисте..." list="seCatList"/>
+        <datalist id="seCatList"></datalist>
+      </div>
+      <div class="se-field">
+        <label class="se-label">Скріншоти <span class="se-optional">необов'язково</span></label>
+        <div class="se-drop" id="seDrop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <span>Перетягни, <label class="se-pick" for="seFileInput">вибери файли</label> або <kbd>Ctrl+V</kbd></span>
+          <input id="seFileInput" type="file" accept="image/*" multiple style="display:none"/>
+        </div>
+        <div class="se-thumbs" id="seThumbs"></div>
+      </div>
+    </div>
+
+    <div class="se-footer">
+      <button class="se-btn-skip" id="seSkip">Скасувати</button>
+      <button class="se-btn-save" id="seSave">Зберегти сесію →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     FULL VIEW
+══════════════════════════════════════ -->
+<div id="modeFull" class="mode">
+  <div class="fv">
+
+    <!-- Top bar -->
+    <div class="fv-topbar">
+      <div class="fv-brand">
+        <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+          <circle cx="10" cy="10" r="8" stroke="#2483FF" stroke-width="1.5"/>
+          <path d="M10 6v4l3 2" stroke="#2483FF" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>Time Tracker</span>
+      </div>
+      <div class="fv-stats">
+        <div class="fv-stat">
+          <span class="fv-stat-val" id="fvToday">0h 0m</span>
+          <span class="fv-stat-lbl">сьогодні</span>
+        </div>
+        <div class="fv-stat-sep"></div>
+        <div class="fv-stat">
+          <span class="fv-stat-val" id="fvMonth">0h 0m</span>
+          <span class="fv-stat-lbl">цей місяць</span>
+        </div>
+        <div class="fv-stat-sep"></div>
+        <div class="fv-stat">
+          <span class="fv-stat-val" id="fvCount">0</span>
+          <span class="fv-stat-lbl">сесій</span>
+        </div>
+        <div class="fv-stat-sep"></div>
+        <div class="fv-stat">
+          <span class="fv-stat-val" id="fvAvg">—</span>
+          <span class="fv-stat-lbl">середня</span>
+        </div>
+      </div>
+      <div class="fv-topbar-right">
+        <div class="fv-timer-compact">
+          <span class="fv-dot" id="fvDot"></span>
+          <span class="fv-time-sm" id="fvTimeSm">00:00:00</span>
+          <button class="fv-play-sm" id="fvPlay" title="Старт">
+            <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+          </button>
+          <button class="fv-play-sm fv-pause-sm" id="fvPause" title="Пауза" style="display:none">
+            <svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>
+          </button>
+          <button class="fv-play-sm fv-stop-sm" id="fvStop" title="Завершити" style="display:none">
+            <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+          </button>
+        </div>
+        <button class="win-btn win-btn-expand" id="fvCollapse" title="Згорнути">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+            <polyline points="4,14 10,14 10,20"/><polyline points="20,10 14,10 14,4"/>
+            <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+          </svg>
+        </button>
+        <button class="win-btn win-btn-close" id="fvQuit" title="Закрити програму">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <button class="fv-import-btn" id="fvImport" title="Імпортувати з CRM">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Імпорт
+        </button>
+        <input id="importFileInput" type="file" accept=".json" style="display:none"/>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="fv-main">
+      <!-- History timeline -->
+      <div class="fv-timeline" id="fvTimeline"></div>
+
+      <!-- Session drawer -->
+      <div class="fv-drawer" id="fvDrawer">
+        <div class="drawer-header">
+          <button class="drawer-close" id="drawerClose">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <span class="drawer-title">Деталі сесії</span>
+        </div>
+        <div class="drawer-body" id="drawerBody"></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="fv-filterbar">
+      <select class="fv-filter-sel" id="fvFilterMonth"><option value="">Всі місяці</option></select>
+      <select class="fv-filter-sel" id="fvFilterCat"><option value="">Всі категорії</option></select>
+      <button class="fv-clear-btn" id="fvClear">Очистити все</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox gallery -->
+<div id="lightbox" class="lightbox" style="display:none">
+  <button class="lb-close" id="lbClose">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+  <button class="lb-nav lb-prev" id="lbPrev">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="15,18 9,12 15,6"/></svg>
+  </button>
+  <div class="lb-content">
+    <img class="lb-img" id="lbImg" src="" alt=""/>
+    <div class="lb-footer">
+      <div class="lb-meta">
+        <span class="lb-counter" id="lbCounter">1 / 1</span>
+        <span class="lb-caption" id="lbCaption"></span>
+      </div>
+      <button class="lb-dl" id="lbDl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Завантажити
+      </button>
+    </div>
+  </div>
+  <button class="lb-nav lb-next" id="lbNext">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9,18 15,12 9,6"/></svg>
+  </button>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
