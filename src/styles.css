@@ -900,9 +900,10 @@ kbd {
 .tl-row-btns {
   display: flex; align-items: center; gap: 3px;
   flex-shrink: 0; opacity: 0;
+  pointer-events: none;
   transition: opacity .15s;
 }
-.tl-sess:hover .tl-row-btns { opacity: 1; }
+.tl-sess:hover .tl-row-btns { opacity: 1; pointer-events: auto; }
 
 .tl-row-btn {
   width: 24px; height: 24px; border-radius: 6px; border: none;
