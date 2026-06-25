@@ -609,38 +609,50 @@ function bindTimelineEvents() {
 
 // ── drawer: view mode ─────────────────────────────────────────────────────────
 async function openDrawer(sessionId, inEditMode = false) {
-  drawerOpenSessionId = sessionId;
+  try {
+    drawerOpenSessionId = sessionId;
 
-  const sessions = await getAllSessions();
-  const s = sessions.find(x => x.id === sessionId);
-  if (!s) return;
+    const sessions = await getAllSessions();
+    const s = sessions.find(x => x.id === sessionId);
+    if (!s) { console.warn('openDrawer: session not found', sessionId); return; }
 
-  const screens = await getScreenshotsBySession(sessionId);
-  drawerScreenshots = screens;
+    const screens = await getScreenshotsBySession(sessionId);
+    drawerScreenshots = screens;
 
-  if (inEditMode) {
-    renderDrawerEdit(s, screens);
-    drawerEditMode = true;
-    editPendingScreenshots = [];
-    editDeletedIds = [];
-    $('drawerTitle').textContent  = 'Редагування';
-    $('drawerEditBtn').style.display   = 'none';
-    $('drawerSaveBtn').style.display   = '';
-    $('drawerCancelBtn').style.display = '';
-  } else {
-    renderDrawerView(s, screens);
-    drawerEditMode = false;
-    $('drawerTitle').textContent  = 'Деталі сесії';
-    $('drawerEditBtn').style.display   = '';
-    $('drawerSaveBtn').style.display   = 'none';
-    $('drawerCancelBtn').style.display = 'none';
+    if (inEditMode) {
+      renderDrawerEdit(s, screens);
+      drawerEditMode = true;
+      editPendingScreenshots = [];
+      editDeletedIds = [];
+      $('drawerTitle').textContent  = 'Редагування';
+      $('drawerEditBtn').style.display   = 'none';
+      $('drawerSaveBtn').style.display   = '';
+      $('drawerCancelBtn').style.display = '';
+    } else {
+      renderDrawerView(s, screens);
+      drawerEditMode = false;
+      $('drawerTitle').textContent  = 'Деталі сесії';
+      $('drawerEditBtn').style.display   = '';
+      $('drawerSaveBtn').style.display   = 'none';
+      $('drawerCancelBtn').style.display = 'none';
+    }
+
+    const drawer = $('fvDrawer');
+    drawer.classList.add('open');
+    // Flash so the user sees it opened
+    drawer.classList.remove('drawer-flash');
+    requestAnimationFrame(() => { requestAnimationFrame(() => drawer.classList.add('drawer-flash')); });
+    setTimeout(() => drawer.classList.remove('drawer-flash'), 600);
+    // Scroll drawer body to top
+    const body = $('drawerBody');
+    if (body) body.scrollTop = 0;
+
+    $('fvTimeline').querySelectorAll('.tl-sess').forEach(el => {
+      el.classList.toggle('active', +el.dataset.sid === sessionId);
+    });
+  } catch (err) {
+    console.error('openDrawer error:', err);
   }
-
-  $('fvDrawer').classList.add('open');
-
-  $('fvTimeline').querySelectorAll('.tl-sess').forEach(el => {
-    el.classList.toggle('active', +el.dataset.sid === sessionId);
-  });
 }
 
 function renderDrawerView(s, screens) {

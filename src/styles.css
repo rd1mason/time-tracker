@@ -723,6 +723,12 @@ kbd {
 }
 .lb-del:hover { background: rgba(239,68,68,.22); color: var(--red); border-color: var(--red); }
 
+@keyframes drawerFlash {
+  0%   { box-shadow: inset -4px 0 0 var(--accent), 2px 0 20px rgba(36,131,255,.3); }
+  100% { box-shadow: none; }
+}
+.fv-drawer.drawer-flash { animation: drawerFlash .5s ease-out; }
+
 /* ══════════════════════════════════════════
    COMPACT WIDGET — TASK BAR
 ══════════════════════════════════════════ */
