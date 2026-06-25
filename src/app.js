@@ -570,10 +570,10 @@ function bindTimelineEvents() {
       h.querySelector('.tl-day-arrow').classList.toggle('open');
     };
   });
-  // Row click → view mode drawer
+  // Row click → view mode drawer (only blocked by row-action buttons)
   $('fvTimeline').querySelectorAll('.tl-sess').forEach(el => {
     el.onclick = e => {
-      if (e.target.closest('.tl-row-btns') || e.target.closest('.tl-act-badge')) return;
+      if (e.target.closest('.tl-row-btns')) return;
       const sid = +el.dataset.sid;
       el.classList.add('click-flash');
       setTimeout(() => el.classList.remove('click-flash'), 300);
@@ -586,7 +586,6 @@ function bindTimelineEvents() {
       e.stopPropagation();
       const sid = +badge.closest('.tl-sess').dataset.sid;
       await openDrawer(sid, false);
-      // Give drawer a moment to render then open lightbox
       setTimeout(() => { if (drawerScreenshots.length) openLightbox(0); }, 150);
     };
   });
