@@ -573,11 +573,21 @@ function bindTimelineEvents() {
   // Row click → view mode drawer
   $('fvTimeline').querySelectorAll('.tl-sess').forEach(el => {
     el.onclick = e => {
-      if (e.target.closest('.tl-row-btns')) return;
+      if (e.target.closest('.tl-row-btns') || e.target.closest('.tl-act-badge')) return;
       const sid = +el.dataset.sid;
       el.classList.add('click-flash');
       setTimeout(() => el.classList.remove('click-flash'), 300);
       openDrawer(sid, false);
+    };
+  });
+  // Screenshot badge → open drawer + open lightbox at first photo
+  $('fvTimeline').querySelectorAll('.tl-act-badge.has-screens').forEach(badge => {
+    badge.onclick = async e => {
+      e.stopPropagation();
+      const sid = +badge.closest('.tl-sess').dataset.sid;
+      await openDrawer(sid, false);
+      // Give drawer a moment to render then open lightbox
+      setTimeout(() => { if (drawerScreenshots.length) openLightbox(0); }, 150);
     };
   });
   // Edit button → edit mode drawer
@@ -649,15 +659,27 @@ function renderDrawerView(s, screens) {
   const screensHtml = screens.length
     ? `<div class="dr-screens">
         ${screens.map((sc, i) => `
-          <div class="dr-screen-wrap">
-            <img class="dr-screen-img" src="${sc.dataUrl}" alt="" data-i="${i}"/>
+          <div class="dr-screen-card" data-i="${i}" data-scid="${sc.id}">
+            <div class="dr-screen-thumb" data-i="${i}">
+              <img class="dr-screen-img" src="${sc.dataUrl}" alt="" data-i="${i}"/>
+              <div class="dr-screen-overlay" data-i="${i}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+            </div>
             ${sc.caption ? `<div class="dr-screen-cap">${esc(sc.caption)}</div>` : ''}
-            <button class="dr-screen-dl" data-i="${i}" title="Завантажити">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            </button>
+            <div class="dr-screen-actions">
+              <button class="dr-screen-action-btn dr-screen-dl" data-i="${i}" title="Завантажити">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Зберегти
+              </button>
+              <button class="dr-screen-action-btn dr-screen-rm" data-i="${i}" data-scid="${sc.id}" title="Видалити">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2 0,0,1-2,2H8a2,2 0,0,1-2,-2L5,6"/></svg>
+                Видалити
+              </button>
+            </div>
           </div>`).join('')}
       </div>`
-    : `<div class="dr-no-screens">Немає скріншотів.<br>Натисни «Ред.» щоб додати.</div>`;
+    : `<div class="dr-no-screens">Немає скріншотів</div>`;
 
   $('drawerBody').innerHTML = `
     ${plannedTask ? `
@@ -684,13 +706,19 @@ function renderDrawerView(s, screens) {
     <div class="dr-field">
       <div class="dr-label">Скріншоти (${screens.length})</div>
       ${screensHtml}
+      <button class="dr-add-screen-btn" id="drAddScreenBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Додати скріншот
+      </button>
     </div>
     <button class="dr-del-btn" id="drDelBtn">Видалити сесію</button>
   `;
 
-  $('drawerBody').querySelectorAll('.dr-screen-img').forEach(img => {
-    img.onclick = () => openLightbox(+img.dataset.i);
+  // Click on image or overlay → lightbox
+  $('drawerBody').querySelectorAll('.dr-screen-thumb, .dr-screen-overlay').forEach(el => {
+    el.onclick = () => openLightbox(+el.dataset.i);
   });
+  // Download button
   $('drawerBody').querySelectorAll('.dr-screen-dl').forEach(btn => {
     btn.onclick = e => {
       e.stopPropagation();
@@ -698,6 +726,31 @@ function renderDrawerView(s, screens) {
       if (sc) downloadImg(sc.dataUrl, sc.name || 'screenshot.png');
     };
   });
+  // Delete individual screenshot in view mode
+  $('drawerBody').querySelectorAll('.dr-screen-rm').forEach(btn => {
+    btn.onclick = async e => {
+      e.stopPropagation();
+      if (!confirm('Видалити цей скріншот?')) return;
+      await deleteScreenshot(+btn.dataset.scid);
+      // Refresh drawer
+      const sid = drawerOpenSessionId;
+      const allSessions = await getAllSessions();
+      const sess = allSessions.find(x => x.id === sid);
+      if (sess) {
+        drawerScreenshots = await getScreenshotsBySession(sid);
+        renderDrawerView(sess, drawerScreenshots);
+      }
+      await loadBadges(allSessions);
+    };
+  });
+  // Add screenshot → switch to edit mode
+  const addBtn = $('drAddScreenBtn');
+  if (addBtn) {
+    addBtn.onclick = () => {
+      if (drawerOpenSessionId) openDrawer(drawerOpenSessionId, true);
+    };
+  }
+  // Delete session
   const del = $('drDelBtn');
   if (del) {
     del.onclick = async () => {
@@ -871,6 +924,28 @@ function renderLightboxFrame() {
   $('lbDl').onclick          = () => downloadImg(sc.dataUrl, sc.name || 'screenshot.png');
   $('lbPrev').disabled       = lbIdx === 0;
   $('lbNext').disabled       = lbIdx === total - 1;
+  // Delete button — remove this screenshot from DB and refresh
+  $('lbDelBtn').onclick = async () => {
+    if (!confirm('Видалити цей скріншот?')) return;
+    const scid = sc.id;
+    await deleteScreenshot(scid);
+    // Remove from lbScreens
+    lbScreens.splice(lbIdx, 1);
+    drawerScreenshots = [...lbScreens];
+    if (!lbScreens.length) {
+      closeLightbox();
+    } else {
+      lbIdx = Math.min(lbIdx, lbScreens.length - 1);
+      renderLightboxFrame();
+    }
+    // Refresh drawer view if open
+    if (drawerOpenSessionId && !drawerEditMode) {
+      const allSessions = await getAllSessions();
+      const sess = allSessions.find(x => x.id === drawerOpenSessionId);
+      if (sess) renderDrawerView(sess, drawerScreenshots);
+      await loadBadges(allSessions);
+    }
+  };
 }
 
 function lbNavigate(dir) {

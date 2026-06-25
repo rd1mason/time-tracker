@@ -6,7 +6,7 @@ let win = null;
 
 const SIZES = {
   compact:     { w: 380,  h: 108 },
-  pre_start:   { w: 440,  h: 258 },
+  pre_start:   { w: 440,  h: 298 },
   session_end: { w: 440,  h: 590 },
   full:        { w: 1120, h: 780 },
 };

@@ -597,12 +597,69 @@ kbd {
 .tl-sess.click-flash { animation: sessFlash .3s ease-out forwards; }
 
 .dr-no-screens {
-  font-size: 12px; color: var(--text3); line-height: 1.7;
-  padding: 10px 14px;
-  background: rgba(255,255,255,.02);
-  border: 1px dashed rgba(255,255,255,.08);
-  border-radius: 8px;
+  font-size: 12px; color: var(--text3);
+  padding: 8px 0;
 }
+
+/* Screenshot cards in view mode */
+.dr-screens { display: flex; flex-direction: column; gap: 12px; }
+
+.dr-screen-card {
+  border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+  background: var(--bg);
+}
+.dr-screen-thumb {
+  position: relative; cursor: pointer;
+  display: block; width: 100%;
+}
+.dr-screen-thumb .dr-screen-img {
+  width: 100%; aspect-ratio: 16/9; object-fit: cover;
+  display: block; border-radius: 0;
+}
+.dr-screen-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .15s; cursor: pointer;
+  color: #fff;
+}
+.dr-screen-thumb:hover .dr-screen-overlay { opacity: 1; }
+.dr-screen-cap {
+  font-size: 11px; color: var(--text3);
+  padding: 6px 12px 0;
+}
+.dr-screen-actions {
+  display: flex; gap: 6px;
+  padding: 8px 10px 10px;
+}
+.dr-screen-action-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 7px 10px; border-radius: 8px; border: none;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.dr-screen-dl {
+  background: rgba(36,131,255,.1); color: var(--accent);
+}
+.dr-screen-dl:hover { background: rgba(36,131,255,.2); }
+.dr-screen-rm {
+  background: rgba(239,68,68,.08); color: rgba(239,68,68,.7);
+}
+.dr-screen-rm:hover { background: rgba(239,68,68,.18); color: var(--red); }
+
+/* Add screenshot button */
+.dr-add-screen-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; margin-top: 8px; padding: 9px;
+  background: none; border: 1.5px dashed var(--border);
+  border-radius: 9px; color: var(--text3); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: color .15s, border-color .15s;
+}
+.dr-add-screen-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Screenshot badge — clickable */
+.tl-act-badge.has-screens { cursor: pointer; }
+.tl-act-badge.has-screens:hover { background: rgba(36,131,255,.12) !important; border-color: rgba(36,131,255,.3) !important; }
 
 /* ── Lightbox gallery ─── */
 .lightbox {
@@ -654,6 +711,17 @@ kbd {
   cursor: pointer; transition: background .15s; flex-shrink: 0;
 }
 .lb-dl:hover { background: var(--accent-h); }
+
+.lb-actions { display: flex; align-items: center; gap: 8px; }
+
+.lb-del {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.25);
+  border-radius: 9px; color: rgba(239,68,68,.8);
+  padding: 8px 14px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+}
+.lb-del:hover { background: rgba(239,68,68,.22); color: var(--red); border-color: var(--red); }
 
 /* ══════════════════════════════════════════
    COMPACT WIDGET — TASK BAR
